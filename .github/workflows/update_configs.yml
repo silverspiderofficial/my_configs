@@ -92,8 +92,8 @@ jobs:
 
       - name: Keep only valid protocol lines
         run: |
-          grep -E '^(vless://|vmess://)' all_configs.txt | sort -u > final.txt
-          #|trojan://|ss://|tuic://|hysteria2://|hy2://
+          grep -E '^(vless://)' all_configs.txt | sort -u > final.txt
+          #vmess://|trojan://|ss://|tuic://|hysteria2://|hy2://
           echo "Total valid configs: $(wc -l < final.txt)"
 
       - name: Commit and push changes
