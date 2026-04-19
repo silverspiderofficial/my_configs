@@ -1,0 +1,55 @@
+name: 'جمع‌آوری خودکار کانفیگ‌ها'
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: جمع‌آوری از همه منابع
+        run: |
+          echo "" > all_configs.txt
+          # اینجا لینک‌ها رو عیناً کپی کن
+          for url in \
+            "https://raw.githubusercontent.com/Epodonios/v2ray-configs/main/Splitted-By-Protocol/vless.txt" \
+            "https://raw.githubusercontent.com/ebrasha/free-v2ray-public-list/refs/heads/main/vless_configs.txt" \
+            "https://raw.githubusercontent.com/Farid-Karimi/Config-Collector/main/vless_iran.txt" \
+            "https://raw.githubusercontent.com/MahanKenway/Freedom-V2Ray/main/configs/vless.txt" \
+            "https://raw.githubusercontent.com/tepo80/v2rayNG_-/main/vless.txt" \
+            "https://raw.githubusercontent.com/DukeMehdi/FreeList-V2ray-Configs/main/vless.txt" \
+            "https://raw.githubusercontent.com/arshiafarzi/free-v2ray-config/main/vless.txt" \
+            "https://raw.githubusercontent.com/coldwater-10/V2ray-Config/main/vless.txt" \
+            "https://raw.githubusercontent.com/soroushmirzaei/telegram-configs-collector/main/vless.txt" \
+            "https://raw.githubusercontent.com/mrvcoder/V2rayCollector/main/vless.txt" \
+            "https://raw.githubusercontent.com/swileran/v2ray-config-collector/main/vless.txt" \
+            "https://raw.githubusercontent.com/kort0881/sbornik-vless/main/vless.txt" \
+            "https://raw.githubusercontent.com/ircfspace/tconfig/main/vless.txt" \
+            "https://raw.githubusercontent.com/ircfspace/location/main/vless.txt" \
+            "https://raw.githubusercontent.com/Ptech3/v2ray-configs/main/vless.txt" \
+            "https://raw.githubusercontent.com/barry-far/V2ray-Configs/main/VLESS.txt" \
+            "https://raw.githubusercontent.com/aiboboxx/v2rayfree/main/vless" \
+            "https://raw.githubusercontent.com/free-nodes/v2rayfree/main/vless.txt" \
+            "https://raw.githubusercontent.com/pooyaRaki/V2Ray-Configs/main/vless.txt" \
+            "https://raw.githubusercontent.com/zzysss/v2ray-config/main/vless.txt" \
+            "https://raw.githubusercontent.com/ip-scanner/cloudflare/main/sub.txt" \
+            "https://raw.githubusercontent.com/MortezaBashsiz/CFScanner/main/configs/sub.txt" \
+            "https://raw.githubusercontent.com/vfarid/cf-workers/main/sub" \
+            "https://raw.githubusercontent.com/miladrahmati/v2ray-configs/main/subscription.txt"
+          do
+            echo "Getting $url"
+            curl -sL "$url" >> all_configs.txt
+          done
+      - name: فیلتر خطوط vless و لینک سابسکریپشن
+        run: |
+          grep -E 'vless://|https?://' all_configs.txt | sort -u > final.txt
+      - name: ذخیره در مخزن
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add final.txt
+          git commit -m "auto update $(date)" || echo "no changes"
+          git push
