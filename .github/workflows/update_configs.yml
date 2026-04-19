@@ -1,119 +1,76 @@
-name: 'Group Sources into Batches of 5'
+name: 'Smart VLESS Collector - Top Repos'
 
 on:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '*/30 * * * *'   # هر 30 دقیقه
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  fetch-grouped:
+  collect-vless:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.PAT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Fetch and group every 5 sources
+      - name: '🧹 Clean & Prepare Temp Files'
         run: |
-          # لیست 50 تایی منابع معروف (شامل کلادفلر و بقیه)
-          urls=(
-            "https://raw.githubusercontent.com/Epodonios/v2ray-configs/main/Splitted-By-Protocol/vless.txt"
-            "https://raw.githubusercontent.com/ebrasha/free-v2ray-public-list/refs/heads/main/vless_configs.txt"
-            "https://raw.githubusercontent.com/Farid-Karimi/Config-Collector/main/vless_iran.txt"
-            "https://raw.githubusercontent.com/MahanKenway/Freedom-V2Ray/main/configs/vless.txt"
-            "https://raw.githubusercontent.com/tepo80/v2rayNG_-/main/vless.txt"
-            "https://raw.githubusercontent.com/DukeMehdi/FreeList-V2ray-Configs/main/vless.txt"
-            "https://raw.githubusercontent.com/arshiafarzi/free-v2ray-config/main/vless.txt"
-            "https://raw.githubusercontent.com/coldwater-10/V2ray-Config/main/vless.txt"
-            "https://raw.githubusercontent.com/soroushmirzaei/telegram-configs-collector/main/vless.txt"
-            "https://raw.githubusercontent.com/mrvcoder/V2rayCollector/main/vless.txt"
-            "https://raw.githubusercontent.com/swileran/v2ray-config-collector/main/vless.txt"
-            "https://raw.githubusercontent.com/kort0881/sbornik-vless/main/vless.txt"
-            "https://raw.githubusercontent.com/ircfspace/tconfig/main/vless.txt"
-            "https://raw.githubusercontent.com/ircfspace/location/main/vless.txt"
-            "https://raw.githubusercontent.com/Ptech3/v2ray-configs/main/vless.txt"
-            "https://raw.githubusercontent.com/barry-far/V2ray-Configs/main/VLESS.txt"
-            "https://raw.githubusercontent.com/aiboboxx/v2rayfree/main/vless"
-            "https://raw.githubusercontent.com/free-nodes/v2rayfree/main/vless.txt"
-            "https://raw.githubusercontent.com/pooyaRaki/V2Ray-Configs/main/vless.txt"
-            "https://raw.githubusercontent.com/zzysss/v2ray-config/main/vless.txt"
-            "https://raw.githubusercontent.com/ip-scanner/cloudflare/main/sub.txt"
-            "https://raw.githubusercontent.com/MortezaBashsiz/CFScanner/main/configs/sub.txt"
-            "https://raw.githubusercontent.com/vfarid/cf-workers/main/sub"
-            "https://raw.githubusercontent.com/miladrahmati/v2ray-configs/main/subscription.txt"
-            "https://raw.githubusercontent.com/Pridestalker/v2ray-config/main/vless.txt"
-            "https://raw.githubusercontent.com/hamidh38n/V2Ray-Configs-Collector/main/vless.txt"
-            "https://raw.githubusercontent.com/ALIILAPRO/v2ray-configs/main/vless.txt"
-            "https://raw.githubusercontent.com/miladrahmati/v2ray-configs/main/vless.txt"
-            "https://raw.githubusercontent.com/amirhosseinchoghaei/Free-Configs/main/vless.txt"
-            "https://raw.githubusercontent.com/MrNimaX/free-config/main/vless.txt"
-            "https://raw.githubusercontent.com/salviol/v2ray-configs/main/vless.txt"
-            "https://raw.githubusercontent.com/hashiritakeru/v2ray-config/main/vless.txt"
-            "https://raw.githubusercontent.com/mahanmiradi/free-v2ray/main/vless.txt"
-            "https://raw.githubusercontent.com/saeidpyr/v2ray-free-configs/main/vless.txt"
-            "https://raw.githubusercontent.com/mortezaabedi2000/Free-config/main/v2ray.txt"
-            "https://raw.githubusercontent.com/vorz1k/v2box/main/v2ray.txt"
-            "https://raw.githubusercontent.com/sevcator/5ubscrpt10n/main/protocols/vl.txt"
-            "https://raw.githubusercontent.com/rtwo2/FastNodes/main/out/sub/vless.txt"
-            "https://raw.githubusercontent.com/samni728/cfvless-admin/main/sub.txt"
-            "https://raw.githubusercontent.com/startProxy/-Cloudflare-Worker-VLESS-/main/sub.txt"
-            "https://raw.githubusercontent.com/Longzhan2027/Cloudflare_vless_trojan/main/sub/vless"
-            "https://raw.githubusercontent.com/Dannyshcn/Cloudflare_vless_trojan/main/sub/vless"
-            "https://raw.githubusercontent.com/haohaoget/Vless2sub/main/sub/vless"
-            "https://raw.githubusercontent.com/JIUSUIAN/sublink-worker/main/sub/vless"
-            "https://raw.githubusercontent.com/tactless2025/cloudflare1/main/sub/vless"
-            "https://raw.githubusercontent.com/tactless2025/cloudflare2/main/sub/vless"
-            "https://raw.githubusercontent.com/edison1105/edgetunnel/main/sub/vless"
-            "https://raw.githubusercontent.com/Ki4wn/v2ray-sub-manager/main/sub/vless"
-            "https://raw.githubusercontent.com/artem4150/VeilBox/main/sub/vless"
-            "https://raw.githubusercontent.com/cmliu/CF-Workers-SUB/main/sub/vless"
-            "https://raw.githubusercontent.com/cmliu/Socks2Vlesssub/main/sub/vless"
-          )
-          
-          # حذف فایل‌های قبلی
-          rm -f group_*.txt
-          
-          # تعداد کل منابع
-          total=${#urls[@]}
-          echo "Total source URLs: $total"
-          
-          # گروه‌بندی 5 تایی
-          group_size=5
-          group_num=1
-          for ((i=0; i<total; i+=group_size)); do
-            echo "Processing group $group_num (sources $((i+1)) to $((i+group_size > total ? total : i+group_size)))"
-            temp_file="temp_group_$group_num.txt"
-            > "$temp_file"
-            
-            # حلقه روی 5 منبع این گروه
-            for ((j=i; j<i+group_size && j<total; j++)); do
-              url="${urls[j]}"
-              echo "  Fetching: $url"
-              curl -sL --fail "$url" >> "$temp_file" || echo "  -> Skipped (failed or empty)"
-            done
-            
-            # فیلتر vless و حذف تکراری‌ها
-            grep -E '^vless://' "$temp_file" | sort -u > "group_$group_num.txt"
-            count=$(wc -l < "group_$group_num.txt")
-            echo "  Group $group_num: $count valid VLESS configs"
-            rm "$temp_file"
-            ((group_num++))
-          done
-          
-          echo "Total group files created: $((group_num-1))"
+          echo "" > all_configs_raw.txt
 
-      - name: Commit and push all group files
+      - name: '🌐 Fetch from 15+ Popular VLESS Repositories'
+        run: |
+          echo "🚀 Starting to fetch VLESS configs from 15+ popular sources..."
+          
+          # لیست مخزن‌های به‌روز و پرطرفدار (بر اساس ستاره و فعالیت)
+          for url in \
+            "https://raw.githubusercontent.com/Epodonios/v2ray-configs/main/Splitted-By-Protocol/vless.txt" \
+            "https://raw.githubusercontent.com/barry-far/V2ray-Configs/main/VLESS.txt" \
+            "https://raw.githubusercontent.com/MahanKenway/Freedom-V2Ray/main/configs/vless.txt" \
+            "https://raw.githubusercontent.com/free-nodes/v2rayfree/main/vless.txt" \
+            "https://raw.githubusercontent.com/arshiafarzi/free-v2ray-config/main/vless.txt" \
+            "https://raw.githubusercontent.com/soroushmirzaei/telegram-configs-collector/main/vless.txt" \
+            "https://raw.githubusercontent.com/tepo80/v2rayNG_-/main/vless.txt" \
+            "https://raw.githubusercontent.com/DukeMehdi/FreeList-V2ray-Configs/main/vless.txt" \
+            "https://raw.githubusercontent.com/ALIILAPRO/v2ray-configs/main/vless.txt" \
+            "https://raw.githubusercontent.com/Pridestalker/v2ray-config/main/vless.txt" \
+            "https://raw.githubusercontent.com/hamidh38n/V2Ray-Configs-Collector/main/vless.txt" \
+            "https://raw.githubusercontent.com/miladrahmati/v2ray-configs/main/vless.txt" \
+            "https://raw.githubusercontent.com/amirhosseinchoghaei/Free-Configs/main/vless.txt" \
+            "https://raw.githubusercontent.com/mahanmiradi/free-v2ray/main/vless.txt" \
+            "https://raw.githubusercontent.com/saeidpyr/v2ray-free-configs/main/vless.txt" \
+            "https://raw.githubusercontent.com/gfpcom/free-proxy-list/main/list/vless.txt"
+          do
+            echo "Fetching from $url"
+            curl -sL "$url" >> all_configs_raw.txt || echo "⚠️ Skipping failed URL: $url"
+          done
+
+      - name: '🧹 Final Processing: Filter & Limit'
+        run: |
+          # فقط خطوط vless:// را نگه دار
+          grep -E '^vless://' all_configs_raw.txt > filtered_vless.txt
+          
+          # حذف خطوط تکراری
+          sort -u filtered_vless.txt > unique_vless.txt
+          
+          # تعداد نهایی را به 200 خط محدود کن (تازه‌ترین‌ها معمولاً آخر فایل هستند)
+          tail -n 200 unique_vless.txt > final.txt
+          
+          # گزارش تعداد نهایی
+          echo "✅ Total unique VLESS configs collected: $(wc -l < final.txt)"
+
+      - name: '💾 Commit & Push'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add group_*.txt
+          git add final.txt
           if git diff --staged --quiet; then
-            echo "No changes to commit"
+            echo "✅ No new configs found, no commit needed."
           else
-            git commit -m "Grouped sources into batches of 5"
+            git commit -m "✨ Auto-update VLESS configs $(date +'%Y-%m-%d %H:%M:%S')"
             git pull --rebase origin ${{ github.ref_name }} || true
             git push origin HEAD:${{ github.ref_name }}
+            echo "✅ Configs updated successfully!"
           fi
